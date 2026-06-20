@@ -1,4 +1,4 @@
-#commit 1 - Se implementa la clase Bibliotecario, Recurso, RegistroAtencion, PrestamoLibro y UsoSalaEstudio con sus respectivos atributos y métodos.
+#Commit 2 Evolucion del dominio ante cambios 
 
 class Bibliotecario:
     def __init__(self, nombre_empleado:str, codigo_usuario:str):
@@ -16,10 +16,11 @@ class Recurso:
 
 class RegistroAtencion:
     def __init__(self, id, carnet_alumno:str, nombre_empleado:str, codigo_usuario:str):
-        self.id = id
+        self.id = id    
         self.carnet_alumno = carnet_alumno
         self._recursos :list[Recurso] = []
         self.bibliotecario = Bibliotecario(nombre_empleado, codigo_usuario)
+        self.estado = "CUENTA_ACTIVA"
 
     @property
     def recursos(self):
@@ -29,6 +30,18 @@ class RegistroAtencion:
         total_multa = 0
         for recurso in self._recursos:
             total_multa += recurso.calcular_multa(horas_retraso, dias_retraso, alumnos_espera)
+        
+        promedio_multas = total_multa / len(self._recursos) if len(self._recursos) > 0 else 0
+        
+        if promedio_multas > 15.00:
+            self.estado = "CUENTA_SUSPENDIDA"
+        
+        elif self.bibliotecario.codigo_usuario.startswith('AUX'):
+            for recurso in self._recursos:
+                if isinstance(recurso, UsoSalaEstudio) and recurso.alumnos_espera > 10:
+                    self.estado = "CUENTA_SUSPENDIDA"
+                    break
+        
         return total_multa
     
     def agregar_recurso(self, recurso:Recurso):
@@ -47,8 +60,9 @@ class PrestamoLibro(Recurso):
         return total_multa
 
 class UsoSalaEstudio(Recurso):
-    def __init__(self, codigo_identificador:str, horas_retraso:int, dias_retraso:int):
+    def __init__(self, codigo_identificador:str, horas_retraso:int, dias_retraso:int, alumnos_espera:int = 0):
         super().__init__(codigo_identificador, horas_retraso, dias_retraso)
+        self.alumnos_espera = alumnos_espera
 
     def calcular_multa(self, horas_retraso:int, dias_retraso:int, alumnos_espera:int):
         total_multa = 0
